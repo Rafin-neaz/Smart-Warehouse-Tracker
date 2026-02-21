@@ -1,0 +1,16 @@
+﻿@model (Product Product, decimal TotalValue)
+
+@await Html.PartialAsync("_AddNewForm", new Product())
+
+<table style="display:none">
+    <tbody id="table-body" hx-swap-oob="beforeend">
+        @await Html.PartialAsync("_ProductRow", Model.Product)
+    </tbody>
+</table>
+
+@await Html.PartialAsync("_TotalInventoryValue", Model.TotalValue)
+
+
+
+
+

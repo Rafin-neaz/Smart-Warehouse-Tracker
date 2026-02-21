@@ -1,0 +1,10 @@
+﻿@model (Product Product, decimal TotalValue)
+@await Html.PartialAsync("_TotalInventoryValue", Model.TotalValue)
+<table>
+    <tbody>
+        @await Html.PartialAsync("_ProductRow", Model.Product)
+    </tbody>
+</table>
+
+
+

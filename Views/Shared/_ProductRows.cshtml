@@ -1,0 +1,6 @@
+﻿@model List<Product>
+
+@foreach (var item in Model)
+{
+    @await Html.PartialAsync("_ProductRow", item)
+}

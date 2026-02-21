@@ -1,0 +1,10 @@
+﻿
+@model decimal
+
+<div id="inventory-badge-container" hx-swap-oob="true">
+    <span id="inventory-value-badge"
+          class="badge bg-success fs-6 px-3 py-2 d-flex align-items-center gap-1 badge-flash">
+        <i class="bi bi-currency-dollar"></i>
+        @Model.ToString("N2")
+    </span>
+</div>

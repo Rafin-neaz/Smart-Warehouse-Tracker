@@ -1,0 +1,108 @@
+﻿@model WarehouseTracker.Models.Product
+@using WarehouseTracker.Enums
+
+
+<tr id="product-row-@Model.Id" class="product-row table-warning htmx-transition">
+    <!-- Name -->
+    <td>
+        <input type="text"
+               name="Name"
+               value="@Model.Name"
+               class="form-control form-control-sm @(ViewData.ModelState["Name"]?.Errors.Any() == true ? "is-invalid" : "")"
+               placeholder="Product Name"
+               maxlength="25"
+               required />
+        @if (ViewData.ModelState["Name"]?.Errors.Any() == true)
+        {
+            <div class="invalid-feedback">@ViewData.ModelState["Name"]!.Errors.First().ErrorMessage</div>
+        }
+    </td>
+
+    <!-- Description -->
+    <td>
+        <input type="text"
+               name="Description"
+               value="@Model.Description"
+               class="form-control form-control-sm @(ViewData.ModelState["Description"]?.Errors.Any() == true ? "is-invalid" : "")"
+               placeholder="Description"
+               maxlength="250" />
+        @if (ViewData.ModelState["Description"]?.Errors.Any() == true)
+        {
+            <div class="invalid-feedback">@ViewData.ModelState["Description"]!.Errors.First().ErrorMessage</div>
+        }
+    </td>
+
+    <!-- Price -->
+    <td>
+        <input type="number"
+               name="Price"
+               value="@Model.Price"
+               class="form-control form-control-sm text-end @(ViewData.ModelState["Price"]?.Errors.Any() == true ? "is-invalid" : "")"
+               min="0.01"
+               step="0.01"
+               required />
+        @if (ViewData.ModelState["Price"]?.Errors.Any() == true)
+        {
+            <div class="invalid-feedback">@ViewData.ModelState["Price"]!.Errors.First().ErrorMessage</div>
+        }
+    </td>
+
+    <!-- Category -->
+    <td>
+        <select name="Category"
+                class="form-select form-select-sm @(ViewData.ModelState.IsValid == false && ViewData.ModelState["Category"]?.Errors.Any() == true ? "is-invalid" : "")"
+                required>
+            <option value="">Select Category</option>
+
+            @foreach (var cat in Enum.GetValues(typeof(ProductCategory)).Cast<ProductCategory>())
+            {
+                // Calculate selection logic outside the tag
+                var categoryValue = (int)cat;
+                var isSelected = Model?.Category == cat;
+
+                <option value="@categoryValue" selected="@(isSelected ? "selected" : null)">
+                    @cat
+                </option>
+            }
+        </select>
+        @if (ViewData.ModelState["Category"]?.Errors.Any() == true)
+        {
+            <div class="invalid-feedback">@ViewData.ModelState["Category"]!.Errors.First().ErrorMessage</div>
+        }
+    </td>
+
+    <!-- Created/Updated -->
+    <td>@Model.CreatedAt.ToString("yyyy-MM-dd")</td>
+    <td>@Model.UpdatedAt.ToString("yyyy-MM-dd")</td>
+
+    <!-- Actions -->
+    <td class="text-center">
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div class="btn-group btn-group-sm" role="group">
+            <!-- Save -->
+            <button type="button"
+                    class="btn btn-success"
+                    title="Save changes"
+                    hx-put="/Product/Update/@Model"
+                    hx-target="closest tr"
+                    hx-swap="outerHTML swap:200ms"
+                    hx-select="tr"
+                    hx-include="closest tr">
+                <i class="bi bi-check-lg"></i>
+                Save
+            </button>
+
+            <!-- Cancel -->
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    title="Cancel editing"
+                    hx-get="/Product/ReadRow/@Model.Id"
+                    hx-target="closest tr"
+                    hx-select="tr"
+                    hx-swap="outerHTML swap:200ms">
+                <i class="bi bi-x-lg"></i>
+                Cancel
+            </button>
+        </div>
+    </td>
+</tr>
