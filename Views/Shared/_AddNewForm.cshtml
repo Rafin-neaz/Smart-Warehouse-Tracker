@@ -1,6 +1,9 @@
 ﻿@model Product
-
-<form hx-post="/Product/Create" hx-target="#add-new-form" class="border p-3 rounded">
+@{
+    var categories = ViewBag.Categories as IEnumerable<Category> ?? Enumerable.Empty<Category>();
+    var subCategories = ViewBag.SubCategories as IEnumerable<SubCategory> ?? Enumerable.Empty<SubCategory>();
+}
+<form hx-post="/Product/Create" hx-target="#add-new-form" hx-sync="this:queue"  class="border p-3 rounded">
     <h5 class="mb-3">Add New Product</h5>
 
     <div class="row g-3">
@@ -19,13 +22,28 @@
             <span asp-validation-for="Price" class="text-danger"></span>
         </div>
 
-        <div class="col-md-2">
-            <select asp-for="Category"
-                    asp-items="Html.GetEnumSelectList<ProductCategory>()"
-                    class="form-select">
+        <!-- Cascading Category → Sub-Category -->
+        <div class="form-group">
+            <label asp-for="CategoryId">Category *</label>
+            <select asp-for="CategoryId"
+                    class="form-input"
+                    hx-get="/Product/SubCategories"
+                    hx-include="[name='CategoryId']"
+                    hx-target="#subcategory-container"
+                    hx-swap="innerHTML"
+                    hx-trigger="change"
+                    hx-sync="this:replace">
                 <option value="">-- Select Category --</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id">@cat.Name</option>
+                }
             </select>
-            <span asp-validation-for="Category" class="text-danger"></span>
+            <span asp-validation-for="CategoryId" class="text-danger"></span>
+        </div>
+
+        <div class="form-group" id="subcategory-container">
+            @await Html.PartialAsync("_SubCategoryOptions", subCategories)
         </div>
 
         <div asp-validation-summary="All"></div>

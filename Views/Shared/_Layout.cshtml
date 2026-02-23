@@ -8,6 +8,7 @@
           content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
     <meta name="viewport" content="width=device-width" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <title>@ViewBag.Title</title>
     <style>
         .toast {
@@ -101,7 +102,61 @@
         document.body.addEventListener("showToast", (e) => {
             showToast(e.detail.value);
         });
+        document.body.addEventListener('bulk-update-success', function(evt) {
+            // Hide the bulk bar
+            const bar = document.getElementById('bulk-bar');
+            const counter = document.getElementById('selected-count');
+            if (bar) bar.style.display = 'none';
+            if (counter) counter.textContent = '0 selected';
+
+            // Optionally uncheck all checkboxes
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+
+            // Reset master checkbox
+            const masterCb = document.getElementById('select-all');
+            if (masterCb) {
+                masterCb.checked = false;
+                masterCb.indeterminate = false;
+            }
+            showToast("Updated Successfully", 2000);
+        });
+        document.querySelectorAll('#tab-nav .tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove 'active' from all tabs
+                document.querySelectorAll('#tab-nav .tab').forEach(t => t.classList.remove('active'));
+                // Add 'active' to the clicked tab
+                this.classList.add('active');
+            });
+        });
+
+        function updateActiveTab() {
+            const tabs = document.querySelectorAll('#tab-nav .tab');
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentTab = urlParams.get('tab') || 'all';
+
+            tabs.forEach(tab => {
+                // Remove old active class
+                tab.classList.remove('active');
+
+                // Add active if tab matches currentTab
+                const tabName = tab.getAttribute('hx-vals')
+                                ? JSON.parse(tab.getAttribute('hx-vals')).tab
+                                : tab.dataset.tab;
+
+                if (tabName === currentTab) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+
+                // Run on page load
+        document.addEventListener('DOMContentLoaded', updateActiveTab);
+
+        // Run on HTMX navigation (forward/back)
+        document.body.addEventListener('htmx:afterSwap', updateActiveTab);
+        document.body.addEventListener('htmx:popstate', updateActiveTab);
     </script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     
 </body>
 </html>

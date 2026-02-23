@@ -40,11 +40,22 @@ namespace WarehouseTracker.Repositories
                                  .FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task<List<Product>> GetAll()
+        public async Task<List<Product>> GetAll(string? search=null)
         {
-            return await _db.Products
-                                 .AsNoTracking()
-                                 .ToListAsync();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                return await _db.Products
+                .AsNoTracking()
+                .Where(p => p.Name.Contains(search))
+                .ToListAsync();
+            } 
+            else
+            {
+                return await _db.Products
+                 .AsNoTracking()
+                 .ToListAsync();
+            }
+
         }
 
         public async Task<Product> Update(Product product)

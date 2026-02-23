@@ -1,0 +1,10 @@
+﻿@model IEnumerable<SubCategory>
+
+<label>Sub-Category</label>
+<select name="SubCategoryId" class="form-input">
+    <option value="">-- Select Sub-Category --</option>
+    @foreach (var sub in Model)
+    {
+        <option value="@sub.Id">@sub.Name</option>
+    }
+</select>

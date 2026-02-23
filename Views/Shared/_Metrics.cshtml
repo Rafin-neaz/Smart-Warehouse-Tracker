@@ -1,0 +1,87 @@
+﻿@model DashboardMetrics
+
+<div class="metrics-header">
+    <h2><i class="fas fa-chart-line"></i> Live Dashboard</h2>
+    <span class="pulse-dot" title="Live updates every 30s"></span>
+</div>
+
+<div class="metric-cards">
+    <div class="metric-card metric-blue">
+        <div class="metric-icon"><i class="fas fa-boxes-stacked"></i></div>
+        <div class="metric-info">
+            <div class="metric-value">@Model.TotalProducts</div>
+            <div class="metric-label">Total Products</div>
+        </div>
+    </div>
+    <div class="metric-card metric-green">
+        <div class="metric-icon"><i class="fas fa-truck"></i></div>
+        <div class="metric-info">
+            <div class="metric-value">@Model.ActiveShipments</div>
+            <div class="metric-label">Active Shipments</div>
+        </div>
+    </div>
+    <div class="metric-card metric-orange">
+        <div class="metric-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="metric-info">
+            <div class="metric-value">@Model.LowStockCount</div>
+            <div class="metric-label">Low Stock Alerts</div>
+        </div>
+    </div>
+    <div class="metric-card metric-red">
+        <div class="metric-icon"><i class="fas fa-circle-xmark"></i></div>
+        <div class="metric-info">
+            <div class="metric-value">@Model.OutOfStockCount</div>
+            <div class="metric-label">Out of Stock</div>
+        </div>
+    </div>
+    <div class="metric-card metric-yellow">
+        <div class="metric-icon"><i class="fas fa-clock"></i></div>
+        <div class="metric-info">
+            <div class="metric-value">@Model.DelayedShipments</div>
+            <div class="metric-label">Delayed</div>
+        </div>
+    </div>
+</div>
+
+@if (Model.LowStockItems.Any())
+{
+    <div class="alert-section">
+        <h3><i class="fas fa-bell"></i> Low Stock Alerts</h3>
+        <ul class="alert-list">
+            @foreach (var item in Model.LowStockItems)
+            {
+                <li class="alert-item alert-orange">
+                    <div class="alert-name">@item.Name</div>
+                    <div class="alert-detail">
+                        <span class="badge badge-warning">@item.StockQuantity left</span>
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@* @if (Model.ActiveShipmentItems.Any())
+{
+    <div class="alert-section">
+        <h3><i class="fas fa-satellite"></i> Active Shipments</h3>
+        <ul class="alert-list">
+            @foreach (var item in Model.ActiveShipmentItems)
+            {
+                <li class="alert-item alert-blue">
+                    <div class="alert-name">@item.Name</div>
+                    <div class="alert-detail">
+                        @if (!string.IsNullOrEmpty(item.Origin))
+                        {
+                            <small>@item.Origin → @item.Destination</small>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+    </div>
+} *@
+
+<div class="metrics-footer">
+    <small><i class="fas fa-rotate"></i> Auto-refreshes every 30s</small>
+</div>

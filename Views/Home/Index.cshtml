@@ -1,64 +1,121 @@
-﻿@model List<Product>
+﻿@model ProductListViewModel
 
 @{
     ViewData["Title"] = "Products";
 }
 
+<div id="tab-content">
 
-<!-- Header with Search Box -->
-<header class="bg-dark p-3">
-    <style>
-        .htmx-indicator {
-            display: none;
-        }
+    <div class="command-center">
+        <aside class="sidebar">
+            <div id="metrics-panel"
+                 hx-get="/Product/Metrics"
+                 hx-trigger="load, inventory-updated from:body, every 30s"
+                 hx-swap="innerHTML">
+                @await Html.PartialAsync("_Metrics", Model.Metrics)
+            </div>
+        </aside>
 
-        .htmx-request .htmx-indicator {
-            display: inline;
-        }
+        <main class="main-content">
+            <!-- Header + Search -->
+            <header class="bg-dark p-3">
+                <div class="container">
+                    <input id="search-box"
+                        type="text"
+                           class="form-control"
+                           style="width: 450px;"
+                           placeholder="Search products..."
+                           name="search"
+                           hx-get="/Product/Index"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-indicator="#spinner"
+                           hx-target="#table-body" 
+                           hx-vals='js:{tab: document.querySelector(".tab.active").getAttribute("data-tab-value")}' />
+                </div>
+            </header>
+            <!-- ── TABS ──────────────────────────────────── -->
+            <nav class="tabs" id="tab-nav">
+                <a class="tab @(Model.ActiveTab == "all" ? "active" : "")"
+                   data-tab-value="all"
+                   href="/Product?tab=all"
+                   hx-get="/Product"
+                   hx-vals='{"tab":"all"}'
+                   hx-target="#table-body"
+                   hx-swap="innerHTML"
+                   hx-push-url="/Product?tab=all"
+                   hx-include="#search-box">
+                    <i class="fas fa-list"></i> All Products
+                </a>
+                <a class="tab @(Model.ActiveTab == "incoming" ? "active" : "")"
+                   data-tab-value="incoming"
+                   href="/Product?tab=incoming"
+                   hx-get="/Product"
+                   hx-vals='{"tab":"incoming"}'
+                   hx-target="#table-body"
+                   hx-swap="innerHTML"
+                   hx-push-url="/Product?tab=incoming"
+                   hx-include="#search-box">
+                    <i class="fas fa-truck"></i> Incoming
+                </a>
+                <a class="tab @(Model.ActiveTab == "outofstock" ? "active" : "")"
+                   data-tab-value="outofstock"
+                   href="/Product?tab=outofstock"
+                   hx-get="/Product"
+                   hx-vals='{"tab":"outofstock"}'
+                   hx-target="#table-body"
+                   hx-swap="innerHTML"
+                   hx-push-url="/Product?tab=outofstock"
+                   hx-include="#search-box">
+                    <i class="fas fa-triangle-exclamation"></i> Out of Stock
+                </a>
+            </nav>
+            <!-- Bulk action bar + spinner -->
+            <div id="bulk-bar" class="bulk-action-bar" style="display:none;">
+                <span id="selected-count">0 selected</span>
+                <form id="bulk-form"
+                      hx-post="/Product/BulkUpdate"
+                      hx-include="#product-table input[name='SelectedIds']:checked"
+                      hx-target="#table-body"
+                      hx-swap="innerHTML">
+                    <select name="NewStatus" class="select-input">
+                        @foreach (var s in Enum.GetValues<ProductStatus>())
+                        {
+                            <option value="@s">@s.ToString()</option>
+                        }
+                    </select>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-arrows-rotate"></i> Update Status
+                    </button>
+                </form>
+                <button class="btn btn-ghost" onclick="clearSelection()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+            <img id="spinner" class="htmx-indicator" src="~/images/spinner.png" alt="Loading...">
 
-        .htmx-request.htmx-indicator {
-            display: inline;
-        }
-    </style>
-    <div class="container">
-        <input type="text"
-               class="form-control"
-               style="width: 450px;"
-               placeholder="Search products..."
-               name="search"
-               hx-get="/Home/Index"
-               hx-trigger="keyup changed delay:300ms"
-               hx-indicator="#spinner"
-               hx-target="#table-body" />
+            <!-- Products Table -->
+            <div class="container mt-4">
+                <table id="product-table" class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="col-check">
+                                <input type="checkbox" id="select-all" title="Select All" onchange="toggleSelectAll(this)" />
+                            </th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Updated At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        @await Html.PartialAsync("_ProductRows", Model.Products ?? new List<Product>())
+                    </tbody>
+                </table>
+            </div>
+        </main>
     </div>
-    
-</header>
-
-<div class="container mt-4">
-
-    <!-- Add New Form Partial -->
-    <div id="add-new-form" class="mb-4">
-        @await Html.PartialAsync("_AddNewForm", new Product())
-    </div>
-    <img id="spinner" class="htmx-indicator" src="~/images/spinner.png" alt="Loading...">
-    <!-- Products Table -->
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Price</th>
-                <th>Category</th>
-                <th>Created At</th>
-                <th>Updated At</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="table-body">
-            @await Html.PartialAsync("_ProductRows", Model ?? new List<Product>())
-        </tbody>
-    </table>
-
-   
-
 </div>

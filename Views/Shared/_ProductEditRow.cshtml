@@ -54,7 +54,7 @@
                 required>
             <option value="">Select Category</option>
 
-            @foreach (var cat in Enum.GetValues(typeof(ProductCategory)).Cast<ProductCategory>())
+            @* @foreach (var cat in Enum.GetValues(typeof(ProductCategory)).Cast<ProductCategory>())
             {
                 // Calculate selection logic outside the tag
                 var categoryValue = (int)cat;
@@ -63,7 +63,7 @@
                 <option value="@categoryValue" selected="@(isSelected ? "selected" : null)">
                     @cat
                 </option>
-            }
+            } *@
         </select>
         @if (ViewData.ModelState["Category"]?.Errors.Any() == true)
         {

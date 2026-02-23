@@ -1,10 +1,37 @@
 ﻿@model Product
+@{
+    var statusClass = Model.Status switch
+    {
+        ProductStatus.InStock => "badge-success",
+        ProductStatus.InTransit => "badge-info",
+        ProductStatus.Delivered => "badge-secondary",
+        ProductStatus.Delayed => "badge-warning",
+        ProductStatus.OutOfStock => "badge-danger",
+        _ => "badge-secondary"
+    };
+}
+
 
 <tr>
+    <td class="col-check">
+        <input type="checkbox"
+               name="SelectedIds"
+               value="@Model.Id"
+               onchange="updateBulkBar()"
+               class="row-checkbox" />
+    </td>
     <td>@Model.Name</td>
     <td>@Model.Description</td>
     <td>@Model.Price</td>
-    <td>@Model.Category</td>
+    <td>
+        <span class="category-badge">@Model.Category?.Name</span>
+        @if (Model.SubCategory != null)
+        {
+            <span class="subcategory-badge">@Model.SubCategory.Name</span>
+        }
+    </td>
+    <td>
+        <span class="badge @statusClass">@Model.Status</span>
     <td>@Model.CreatedAt.ToString("yyyy-MM-dd")</td>
     <td>@Model.UpdatedAt.ToString("yyyy-MM-dd")</td>
     <td class="text-center">

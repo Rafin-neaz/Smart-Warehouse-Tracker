@@ -2,35 +2,24 @@
 using WarehouseTracker.Data;
 using WarehouseTracker.Models;
 using WarehouseTracker.Repositories;
+using WarehouseTracker.Services;
+using WarehouseTracker.ViewModels;
 
 namespace WarehouseTracker.Controllers
 {
     public class HomeController : Controller
     {
         private readonly IProductRepository _repo;
+        private readonly IProductService _service;
 
-        public HomeController(IProductRepository productRepository)
+        public HomeController(IProductRepository productRepository, IProductService service)
         {
             _repo = productRepository;
+            _service = service;
         }
         public async Task<IActionResult> Index(string? search)
         {
-            List<Product> products = await _repo.GetAll();
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                products = products.Where(prod => prod.Name.Contains(search)).ToList();
-            }
-
-            var totalValue = products.Sum(p => p.Price);
-
-            ViewData["TotalInventoryValue"] = totalValue;
-
-            if (Request.Headers.ContainsKey("HX-Request"))
-            {
-                return PartialView("_ProductRows", products);
-            }
-            
-            return View(products);
+            return RedirectToAction("Index", "Product", new { search });
         }
     }
 }
