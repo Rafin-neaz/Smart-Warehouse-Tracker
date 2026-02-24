@@ -3,7 +3,7 @@
 <tr>
     <td>@Model.Name</td>
     <td>@Model.Description</td>
-    <td>@Model.Price</td>
+    <td>@Html.DisplayFor(m => m.Price)</td>
     <td>@Model.Category</td>
     <td>@Model.CreatedAt.ToString("yyyy-MM-dd")</td>
     <td>@Model.UpdatedAt.ToString("yyyy-MM-dd")</td>
