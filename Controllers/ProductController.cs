@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarehouseTracker.Data;
@@ -21,53 +21,31 @@ namespace WarehouseTracker.Controllers
             _productRepo = productRepo;
             _service = service;
         }
-        // GET: ProductController
+
         [HttpGet]
-        public async Task<IActionResult> Index(string search = "", string tab = "all", int page = 1)
+        public async Task<IActionResult> Index(ProductFilter filter)
         {
-            tab = tab.ToLowerInvariant();
-            var (products, hasMore) = await _service.GetProductsPagedAsync(search, tab, page);
+            var (products, hasMore) = await _service.GetProductsPagedAsync(filter);
             var categories = await _service.GetCategoriesAsync();
 
             ViewBag.Categories = categories;
+            ViewData["HasMore"] = hasMore;
 
-            var totalValue = products.Sum(p => p.Price);
-
-            ViewData["TotalInventoryValue"] = totalValue;
-            //var metrics = await _service.GetMetricsAsync();
-            //var categories = await _service.GetCategoriesAsync();
-
-            ViewBag.Categories = categories;
 
             var vm = new ProductListViewModel
             {
                 Products = products,
-                ActiveTab = tab,
-                Page = page,
-                //HasMore = hasMore,
-                //Metrics = metrics,
+                ActiveTab = filter.Tab,
             };
-            if (Request.Headers.ContainsKey("HX-Target"))
+            if (Request.Headers.ContainsKey("HX-Request"))
             {
                 return PartialView("_ProductRows", products);
             }
-            return View("~/Views/Home/Index.cshtml", vm);
+            var allProducts = await _productRepo.GetAll();
+            var totalValue = allProducts.Sum(p => p.Price);
 
-            // If HTMX request for tab switch, return only the content partial
-            //if (Request.IsHtmx() && Request.Headers.ContainsKey("HX-Target"))
-            //{
-            //    var target = Request.Headers["HX-Target"].ToString();
-            //    if (target == "product-table-body")
-            //    {
-            //        return PartialView("_ProductTableBody", new InfiniteScrollViewModel
-            //        {
-            //            Products = products,
-            //            NextPage = page + 1,
-            //            HasMore = hasMore,
-            //            ActiveTab = tab
-            //        });
-            //    }
-            //}
+            ViewData["TotalInventoryValue"] = totalValue;
+            return View("~/Views/Home/Index.cshtml", vm);
 
             
         }
@@ -88,11 +66,15 @@ namespace WarehouseTracker.Controllers
         // POST: ProductController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Product product)
+        public async Task<IActionResult> Create(Product product, decimal totalInventoryValue)
         {
             var categories = await _service.GetCategoriesAsync();
 
             ViewBag.Categories = categories;
+            if (product.CategoryId != null && product.CategoryId.Value > 0)
+            {
+                ViewBag.SubCategories = await GetAllSubCategories(product.CategoryId.Value);
+            }
             if (!ModelState.IsValid)
             {
                 return PartialView("_AddNewForm", product);
@@ -104,9 +86,7 @@ namespace WarehouseTracker.Controllers
             await _productRepo.CreateNew(product);
             ModelState.Clear();
 
-            List<Product> products = await _productRepo.GetAll(null);
-            var totalValue = products.Sum(p => p.Price) ?? 0;
-            //Response.Headers["HX-Trigger"] = """{ "showToast": "Product Created Successfully!" }""";
+            var totalValue = totalInventoryValue + product.Price.Value;
             Response.Headers.Add("HX-Trigger", @"{""showToast"": ""Product Created Successfully!"", ""inventory-updated"": {}}");
             return PartialView("_AddNewFormSuccess", (product, totalValue));
         }
@@ -114,34 +94,38 @@ namespace WarehouseTracker.Controllers
         // GET: ProductController/Edit/5
         public async Task<ActionResult> EditRow(int id)
         {
-            var product = await _productRepo.Get(id);
+            var query = _db.Products
+                .Where(p => p.Id == id)
+            .Include(p => p.Category)
+            .Include(p => p.SubCategory)
+            .AsQueryable();
+            var product = await query.FirstOrDefaultAsync();
             return PartialView("_ProductEditRow", product);
         }
 
 
         [HttpPut]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Update(Product product)
+        public async Task<ActionResult> Update(Product product, decimal totalInventoryValue, decimal oldInventoryValue)
         {
             if (!ModelState.IsValid)
             {
                 return PartialView("_ProductEditRow", product);
             }
+            product.UpdatedAt = DateTime.UtcNow;
             await _productRepo.Update(product);
-            List<Product> products = await _productRepo.GetAll(null);
-            decimal totalValue = products.Sum(p => p.Price) ?? 0;
-            Response.Headers["HX-Trigger"] = """{ "showToast": "Product Updated Successfully!" }""";
+            decimal totalValue = totalInventoryValue - oldInventoryValue + product.Price.Value;
+            Response.Headers.Add("HX-Trigger", @"{""showToast"": ""Product Updated Successfully!"", ""inventory-updated"": {}}");
             return PartialView("_ProductRowUpdated", (product, totalValue));
         }
 
         [HttpDelete]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<ActionResult> Delete(int id, decimal totalInventoryValue, decimal deletedInventoryValue)
         {
             await _productRepo.Delete(id);
-            List<Product> products = await _productRepo.GetAll(null);
-            var totalValue = products.Sum(p => p.Price);
-            Response.Headers["HX-Trigger"] = """{ "showToast": "Product Deleted Successfully!" }""";
+            var totalValue = totalInventoryValue - deletedInventoryValue;
+            Response.Headers.Add("HX-Trigger", @"{""showToast"": ""Product Deleted Successfully!"", ""inventory-updated"": {}}");
             return PartialView("_TotalInventoryValue", totalValue);
         }
 
@@ -151,9 +135,14 @@ namespace WarehouseTracker.Controllers
             var subs = await _service.GetSubCategoriesAsync(categoryId);
             return PartialView("_SubCategoryOptions", subs);
         }
+        public async Task<IEnumerable<SubCategory>> GetAllSubCategories(int categoryId)
+        {
+            var subs = await _service.GetSubCategoriesAsync(categoryId);
+            return subs;
+        }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BulkUpdate([FromForm] BulkUpdateViewModel vm)
+        public async Task<IActionResult> BulkUpdate([FromForm] BulkUpdateViewModel vm, ProductFilter filter)
         {
             if (vm.SelectedIds == null || !vm.SelectedIds.Any())
             {
@@ -163,21 +152,8 @@ namespace WarehouseTracker.Controllers
 
             var count = await _service.BulkUpdateStatusAsync(vm.SelectedIds, vm.NewStatus);
 
-            //var (products, hasMore) = await _service.GetProductsPagedAsync("all", 1);
-            //Response.Htmx(h =>
-            //{
-            //    h.WithTrigger("inventory-updated", timing: HtmxTriggerTiming.AfterSettle);
-            //});
-
-            // Return the updated rows for re-render
-            //return PartialView("_ProductTableBody", new InfiniteScrollViewModel
-            //{
-            //    Products = products,
-            //    NextPage = 2,
-            //    HasMore = hasMore,
-            //    ActiveTab = "all"
-            //});
-            List<Product> products = await _productRepo.GetAll(null);
+            var (products, hasMore) = await _service.GetProductsPagedAsync(filter);
+            ViewData["HasMore"] = hasMore;
             Response.Headers.Add("HX-Trigger", @"{""bulk-update-success"": {}, ""inventory-updated"": {}}");
             return PartialView("_ProductRows", products);
         }

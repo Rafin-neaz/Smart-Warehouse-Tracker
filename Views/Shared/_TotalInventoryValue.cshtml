@@ -7,4 +7,8 @@
         <i class="bi bi-currency-dollar"></i>
         @Model.ToString("N2")
     </span>
+    <input type="hidden"
+           id="inventory-value"
+           name="TotalInventoryValue"
+           value="@Model.ToString("F2")" />
 </div>

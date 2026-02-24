@@ -44,13 +44,8 @@
 
             <div id="inventory-badge-wrapper" class="d-flex align-items-center gap-3">
                 <span class="text-white-50 small d-none d-md-inline">Total Inventory Value</span>
-                <div id="inventory-badge-container">
-                    <span id="inventory-value-badge"
-                          class="badge bg-success fs-6 px-3 py-2 d-flex align-items-center gap-1">
-                        <i class="bi bi-currency-dollar"></i>
-                        @(ViewData["TotalInventoryValue"] is decimal v ? v.ToString("N2") : "0.00")
-                    </span>
-                </div>
+
+                @await Html.PartialAsync("_TotalInventoryValue", @ViewData["TotalInventoryValue"] is decimal v ? v : 0.00)
             </div>
         </div>
     </nav>
@@ -65,97 +60,6 @@
     <script src="https://unpkg.com/htmx.org@1.9.10" crossorigin="anonymous"></script>
     <!-- Hyperscript (optional, for confirm dialogs) -->
     <script src="https://unpkg.com/hyperscript.org@0.9.12" crossorigin="anonymous"></script>
-    <script>
-        document.body.addEventListener("htmx:configRequest", function (e) {
-            const token = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute("content");
-
-            if (token) {
-                e.detail.headers['RequestVerificationToken'] = token;
-            }
-        });
-    </script>
-    <script>
-        function showToast(message, duration = 2500) {
-            const container = document.getElementById("toast-container");
-            if (!container) return;
-
-            const toast = document.createElement("div");
-            toast.className = "toast";
-            toast.textContent = message;
-
-            container.appendChild(toast);
-
-            // Trigger animation
-            requestAnimationFrame(() => {
-                toast.classList.add("show");
-            });
-
-            // Auto-remove after duration
-            setTimeout(() => {
-                toast.classList.remove("show");
-                setTimeout(() => toast.remove(), 400); // match CSS transition
-            }, duration);
-        }
-
-        document.body.addEventListener("showToast", (e) => {
-            showToast(e.detail.value);
-        });
-        document.body.addEventListener('bulk-update-success', function(evt) {
-            // Hide the bulk bar
-            const bar = document.getElementById('bulk-bar');
-            const counter = document.getElementById('selected-count');
-            if (bar) bar.style.display = 'none';
-            if (counter) counter.textContent = '0 selected';
-
-            // Optionally uncheck all checkboxes
-            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
-
-            // Reset master checkbox
-            const masterCb = document.getElementById('select-all');
-            if (masterCb) {
-                masterCb.checked = false;
-                masterCb.indeterminate = false;
-            }
-            showToast("Updated Successfully", 2000);
-        });
-        document.querySelectorAll('#tab-nav .tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                // Remove 'active' from all tabs
-                document.querySelectorAll('#tab-nav .tab').forEach(t => t.classList.remove('active'));
-                // Add 'active' to the clicked tab
-                this.classList.add('active');
-            });
-        });
-
-        function updateActiveTab() {
-            const tabs = document.querySelectorAll('#tab-nav .tab');
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentTab = urlParams.get('tab') || 'all';
-
-            tabs.forEach(tab => {
-                // Remove old active class
-                tab.classList.remove('active');
-
-                // Add active if tab matches currentTab
-                const tabName = tab.getAttribute('hx-vals')
-                                ? JSON.parse(tab.getAttribute('hx-vals')).tab
-                                : tab.dataset.tab;
-
-                if (tabName === currentTab) {
-                    tab.classList.add('active');
-                }
-            });
-        }
-
-                // Run on page load
-        document.addEventListener('DOMContentLoaded', updateActiveTab);
-
-        // Run on HTMX navigation (forward/back)
-        document.body.addEventListener('htmx:afterSwap', updateActiveTab);
-        document.body.addEventListener('htmx:popstate', updateActiveTab);
-    </script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     
 </body>

@@ -5,9 +5,9 @@ namespace WarehouseTracker.Repositories
     public interface IProductRepository
     {
         Task<Product> Get(int id);
-        Task<List<Product>> GetAll(string? search);
+        Task<List<Product>> GetAll();
         Task<Product> CreateNew(Product product);
         Task<Product> Update(Product product);
-        Task<Product> Delete(int id);
+        Task<bool> Delete(int id);
     }
 }

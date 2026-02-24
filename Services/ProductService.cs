@@ -3,7 +3,6 @@ using WarehouseTracker.Data;
 using WarehouseTracker.Enums;
 using WarehouseTracker.Models;
 using WarehouseTracker.ViewModels;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace WarehouseTracker.Services
 {
@@ -16,21 +15,19 @@ namespace WarehouseTracker.Services
             _db = db;
         }
 
-        public async Task<(IEnumerable<Product> Products, bool HasMore)> GetProductsPagedAsync(string search, string tab, int page, int pageSize = 20)
+        public async Task<(IEnumerable<Product> Products, bool HasMore)> GetProductsPagedAsync(ProductFilter filter)
         {
             var query = _db.Products
             .Include(p => p.Category)
             .Include(p => p.SubCategory)
             .AsQueryable();
 
-            // Apply search filter if provided
-            if (!string.IsNullOrWhiteSpace(search))
+            if (!string.IsNullOrWhiteSpace(filter.Search))
             {
-                query = query.Where(p => p.Name.Contains(search));
+                query = query.Where(p => p.Name.Contains(filter.Search));
             }
 
-            // Apply tab filter
-            query = tab.ToLowerInvariant() switch
+            query = filter.Tab.ToLowerInvariant() switch
             {
                 "incoming" => query.Where(p => p.Status == ProductStatus.InTransit),
                 "outofstock" => query.Where(p => p.Status == ProductStatus.OutOfStock || p.StockQuantity == 0),
@@ -39,85 +36,12 @@ namespace WarehouseTracker.Services
 
             query = query.OrderByDescending(p => p.UpdatedAt);
 
-            //var skip = (page - 1) * pageSize;
-            //var items = await query.Skip(skip).Take(pageSize + 1).ToListAsync();
-            //var hasMore = items.Count > pageSize;
-            //if (hasMore) items = items.Take(pageSize).ToList();
+            var skip = (filter.Page - 1) * filter.PageSize;
+            var items = await query.Skip(skip).Take(filter.PageSize + 1).ToListAsync();
+            var hasMore = items.Count > filter.PageSize;
+            if (hasMore) items = items.Take(filter.PageSize).ToList();
 
-            //return (items, hasMore);
-            var items = await query.ToListAsync();
-            return (items, false);
-        }
-
-        public async Task<Product?> GetByIdAsync(int id)
-        {
-            return await _db.Products
-                .Include(p => p.Category)
-                .Include(p => p.SubCategory)
-                .FirstOrDefaultAsync(p => p.Id == id);
-        }
-
-        //public async Task<Product> CreateAsync(ProductCreateViewModel vm)
-        //{
-        //    var product = new Product
-        //    {
-        //        Name = vm.Name,
-        //        Sku = vm.Sku,
-        //        Price = vm.Price,
-        //        StockQuantity = vm.StockQuantity,
-        //        Status = vm.Status,
-        //        CategoryId = vm.CategoryId,
-        //        SubCategoryId = vm.SubCategoryId,
-        //        Origin = vm.Origin,
-        //        Destination = vm.Destination,
-        //        CreatedAt = DateTime.UtcNow,
-        //        UpdatedAt = DateTime.UtcNow,
-        //    };
-        //    _db.Products.Add(product);
-        //    await _db.SaveChangesAsync();
-        //    await _db.Entry(product).Reference(p => p.Category).LoadAsync();
-        //    if (product.SubCategoryId.HasValue)
-        //        await _db.Entry(product).Reference(p => p.SubCategory).LoadAsync();
-        //    return product;
-        //}
-
-        //public async Task<Product> UpdateAsync(int id, ProductEditViewModel vm)
-        //{
-        //    var product = await _db.Products.FindAsync(id)
-        //        ?? throw new KeyNotFoundException($"Product {id} not found");
-
-        //    // Concurrency check
-        //    if (vm.RowVersion != null)
-        //    {
-        //        var incoming = Convert.FromBase64String(vm.RowVersion);
-        //        if (!product.RowVersion.SequenceEqual(incoming))
-        //            throw new DbUpdateConcurrencyException("This record was modified by another user. Please reload and try again.");
-        //    }
-
-        //    product.Name = vm.Name;
-        //    product.Sku = vm.Sku;
-        //    product.Price = vm.Price;
-        //    product.StockQuantity = vm.StockQuantity;
-        //    product.Status = vm.Status;
-        //    product.CategoryId = vm.CategoryId;
-        //    product.SubCategoryId = vm.SubCategoryId;
-        //    product.Origin = vm.Origin;
-        //    product.Destination = vm.Destination;
-        //    product.UpdatedAt = DateTime.UtcNow;
-
-        //    await _db.SaveChangesAsync();
-        //    await _db.Entry(product).Reference(p => p.Category).LoadAsync();
-        //    if (product.SubCategoryId.HasValue)
-        //        await _db.Entry(product).Reference(p => p.SubCategory).LoadAsync();
-        //    return product;
-        //}
-
-        public async Task DeleteAsync(int id)
-        {
-            var product = await _db.Products.FindAsync(id)
-                ?? throw new KeyNotFoundException($"Product {id} not found");
-            _db.Products.Remove(product);
-            await _db.SaveChangesAsync();
+            return (items, hasMore);
         }
 
         public async Task<int> BulkUpdateStatusAsync(IEnumerable<int> ids, ProductStatus newStatus)

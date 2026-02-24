@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using WarehouseTracker.Enums;
 
 namespace WarehouseTracker.Models
@@ -14,7 +13,9 @@ namespace WarehouseTracker.Models
         public string? Description { get; set; }
         [Required(ErrorMessage = "Unit price is required.")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Unit price must be greater than zero.")]
-        public decimal? Price { get; set; } = 0;
+        [Display(Name = "Per Unit Price")]
+        [DisplayFormat(DataFormatString = "{0:0.00}", ApplyFormatInEditMode = true)]
+        public decimal? Price { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         [Required(ErrorMessage = "Proudct category is required")]
@@ -25,10 +26,11 @@ namespace WarehouseTracker.Models
         public int? SubCategoryId { get; set; }
         
         public SubCategory? SubCategory { get; set; }
-        public int StockQuantity { get; set; }
+        [Required(ErrorMessage = "Stock Quantity of the Product is required")]
+        public int? StockQuantity { get; set; }
 
         public ProductStatus Status { get; set; } = ProductStatus.InStock;
-        // Concurrency token
+
         [Timestamp]
         public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 

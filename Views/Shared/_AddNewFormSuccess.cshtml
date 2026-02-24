@@ -3,7 +3,7 @@
 @await Html.PartialAsync("_AddNewForm", new Product())
 
 <table style="display:none">
-    <tbody id="table-body" hx-swap-oob="beforeend">
+    <tbody id="table-body" hx-swap-oob="afterbegin">
         @await Html.PartialAsync("_ProductRow", Model.Product)
     </tbody>
 </table>

@@ -1,0 +1,69 @@
+﻿@model Product
+@{
+    var statusClass = Model.Status switch
+    {
+        ProductStatus.InStock => "badge-success",
+        ProductStatus.InTransit => "badge-info",
+        ProductStatus.Delivered => "badge-secondary",
+        ProductStatus.Delayed => "badge-warning",
+        ProductStatus.OutOfStock => "badge-danger",
+        _ => "badge-secondary"
+    };
+}
+<td class="col-check">
+    <input type="checkbox"
+           name="SelectedIds"
+           value="@Model.Id"
+           onchange="updateBulkBar()"
+           class="row-checkbox" />
+</td>
+<td>@Model.Name</td>
+<td>@Model.Description</td>
+<td>@Html.DisplayFor(m => m.Price)</td>
+<td>@Html.DisplayFor(m => m.StockQuantity)</td>
+<td>
+    <span class="category-badge">@Model.Category?.Name</span>
+    @if (Model.SubCategory != null)
+    {
+        <span class="subcategory-badge">@Model.SubCategory.Name</span>
+    }
+    <input type="hidden" name="Category" value="@Model.Category" />
+    <input type="hidden" name="SubCategory" value="@Model.SubCategory" />
+</td>
+<td>
+    <span class="badge @statusClass">@Model.Status</span>
+</td>
+<td>@Model.CreatedAt.ToString("yyyy-MM-dd")</td>
+<td>@Model.UpdatedAt.ToString("yyyy-MM-dd")</td>
+<td class="text-center">
+    <input type="hidden" name="Id" value="@Model.Id" />
+    <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
+    <div class="btn-group btn-group-sm" role="group">
+        <!-- Edit Button -->
+        <button type="button"
+                class="btn btn-outline-primary"
+                title="Edit product"
+                hx-get="/Product/EditRow/@Model.Id"
+                hx-target="closest tr"
+                hx-select="tr"
+                hx-swap="outerHTML swap:200ms">
+            <i class="bi bi-pencil-fill"></i>
+            Edit
+        </button>
+
+        <!-- Delete Button -->
+        <button type="button"
+                class="btn btn-outline-danger delete-row-transition"
+                title="Delete product"
+                hx-delete="/Product/Delete/@Model.Id"
+                hx-target="closest tr"
+                hx-select="tr"
+                hx-swap="outerHTML swap:200ms"
+                hx-confirm="Are you sure you want to delete '@Model.Name'? This action cannot be undone."
+                hx-include="#inventory-value"
+                hx-vals='{"deletedInventoryValue":@Model.Price}'>
+            <i class="bi bi-trash3-fill"></i>
+            Delete
+        </button>
+    </div>
+</td>

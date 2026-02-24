@@ -1,8 +1,26 @@
 ﻿@model WarehouseTracker.Models.Product
 @using WarehouseTracker.Enums
 
+@{
+    var statusClass = Model.Status switch
+    {
+        ProductStatus.InStock => "badge-success",
+        ProductStatus.InTransit => "badge-info",
+        ProductStatus.Delivered => "badge-secondary",
+        ProductStatus.Delayed => "badge-warning",
+        ProductStatus.OutOfStock => "badge-danger",
+        _ => "badge-secondary"
+    };
+}
 
 <tr id="product-row-@Model.Id" class="product-row table-warning htmx-transition">
+    <td class="col-check">
+        <input type="checkbox" 
+               name="SelectedIds"
+               value="@Model.Id"
+               onchange="updateBulkBar()"
+               class="row-checkbox" disabled/>
+    </td>
     <!-- Name -->
     <td>
         <input type="text"
@@ -47,28 +65,35 @@
         }
     </td>
 
+    <!-- Stock Quantity -->
+    <td>
+        <input type="number"
+               name="StockQuantity"
+               value="@Model.StockQuantity"
+               class="form-control form-control-sm text-end @(ViewData.ModelState["StockQuantity"]?.Errors.Any() == true ? "is-invalid" : "")"
+               required />
+        @if (ViewData.ModelState["StockQuantity"]?.Errors.Any() == true)
+        {
+            <div class="invalid-feedback">@ViewData.ModelState["StockQuantity"]!.Errors.First().ErrorMessage</div>
+        }
+    </td>
+
     <!-- Category -->
     <td>
-        <select name="Category"
-                class="form-select form-select-sm @(ViewData.ModelState.IsValid == false && ViewData.ModelState["Category"]?.Errors.Any() == true ? "is-invalid" : "")"
-                required>
-            <option value="">Select Category</option>
+        <!-- Visible display -->
+        <span class="category-badge">@Model.Category?.Name</span>
 
-            @* @foreach (var cat in Enum.GetValues(typeof(ProductCategory)).Cast<ProductCategory>())
-            {
-                // Calculate selection logic outside the tag
-                var categoryValue = (int)cat;
-                var isSelected = Model?.Category == cat;
-
-                <option value="@categoryValue" selected="@(isSelected ? "selected" : null)">
-                    @cat
-                </option>
-            } *@
-        </select>
-        @if (ViewData.ModelState["Category"]?.Errors.Any() == true)
+        @if (Model.SubCategory != null)
         {
-            <div class="invalid-feedback">@ViewData.ModelState["Category"]!.Errors.First().ErrorMessage</div>
+            <span class="subcategory-badge">@Model.SubCategory.Name</span>
         }
+
+        <input type="hidden" name="CategoryId" value="@Model.CategoryId" />
+        <input type="hidden" name="SubCategoryId" value="@Model.SubCategoryId" />
+    </td>
+
+    <td>
+        <span class="badge @statusClass">@Model.Status</span>
     </td>
 
     <!-- Created/Updated -->
@@ -78,16 +103,21 @@
     <!-- Actions -->
     <td class="text-center">
         <input type="hidden" name="Id" value="@Model.Id" />
+        <input type="hidden" name="RowVersion" value="@Convert.ToBase64String(Model.RowVersion)" />
         <div class="btn-group btn-group-sm" role="group">
             <!-- Save -->
             <button type="button"
                     class="btn btn-success"
                     title="Save changes"
-                    hx-put="/Product/Update/@Model"
+                    hx-put="/Product/Update"
                     hx-target="closest tr"
                     hx-swap="outerHTML swap:200ms"
                     hx-select="tr"
-                    hx-include="closest tr">
+                    hx-include="closest tr, #inventory-value"
+                    hx-vals='js:{
+            "totalInventoryValue": document.getElementById("inventory-value").value,
+            "oldInventoryValue": "@Model.Price"
+        }'>
                 <i class="bi bi-check-lg"></i>
                 Save
             </button>

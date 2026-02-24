@@ -965,6 +965,12 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
+.delete-row-transition.htmx-request {
+    opacity: 0;
+    transform: translateX(30px);
+    transition: all 500ms ease-out;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────────── */
 @media (max-width: 960px) {
     .command-center {

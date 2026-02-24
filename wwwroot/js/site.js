@@ -2,25 +2,6 @@
    LOGISTICS COMMAND CENTER — CLIENT JAVASCRIPT
    ═══════════════════════════════════════════════════ */
 
-// ── MODAL ──────────────────────────────────────────────
-
-//function openModal() {
-//    document.getElementById('modal-overlay').classList.remove('hidden');
-//    document.body.style.overflow = 'hidden';
-//}
-
-//function closeModal() {
-//    document.getElementById('modal-overlay').classList.add('hidden');
-//    document.getElementById('modal-content').innerHTML = '';
-//    document.body.style.overflow = '';
-//}
-
-//// Close on Escape key
-//document.addEventListener('keydown', function (e) {
-//    if (e.key === 'Escape') closeModal();
-//});
-
-// ── BULK SELECTION ─────────────────────────────────────
 
 function toggleSelectAll(masterCb) {
     document.querySelectorAll('.row-checkbox').forEach(cb => {
@@ -58,112 +39,132 @@ function clearSelection() {
     updateBulkBar();
 }
 
-// ── DELETE ANTI-FORGERY ────────────────────────────────
+function showToast(message, duration = 2500) {
+    const container = document.getElementById("toast-container");
+    if (!container) return;
 
-//function addAntiForgeryToDelete(btn) {
-//    const token = document.querySelector('input[name="__RequestVerificationToken"]');
-//    if (token) {
-//        btn.setAttribute('hx-headers',
-//            JSON.stringify({ 'RequestVerificationToken': token.value }));
-//        htmx.process(btn); // re-process so HTMX picks up the new header
-//    }
-//}
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.textContent = message;
 
-//// ── TOAST NOTIFICATIONS ────────────────────────────────
+    container.appendChild(toast);
 
-//function showToast(message, type = 'info') {
-//    const container = document.getElementById('toast-container');
-//    const toast = document.createElement('div');
-//    toast.className = `toast toast-${type}`;
-//    const icons = { success: 'fa-check-circle', error: 'fa-circle-xmark', info: 'fa-circle-info' };
-//    toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
-//    container.appendChild(toast);
-//    setTimeout(() => {
-//        toast.style.transition = 'opacity 0.4s, transform 0.4s';
-//        toast.style.opacity = '0';
-//        toast.style.transform = 'translateX(20px)';
-//        setTimeout(() => toast.remove(), 400);
-//    }, 3500);
-//}
+    // Trigger animation
+    requestAnimationFrame(() => {
+        toast.classList.add("show");
+    });
 
-//// ── HTMX EVENT LISTENERS ──────────────────────────────
+    // Auto-remove after duration
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 400); // match CSS transition
+    }, duration);
+}
 
-//// After bulk update — reset selection state
-//document.body.addEventListener('htmx:afterSwap', function (evt) {
-//    if (evt.detail.target && evt.detail.target.id === 'product-table-body') {
-//        clearSelection();
-//        const masterCb = document.getElementById('select-all');
-//        if (masterCb) { masterCb.checked = false; masterCb.indeterminate = false; }
-//        // Re-attach checkbox listeners to new rows
-//        attachCheckboxListeners();
-//    }
-//});
+document.body.addEventListener("showToast", (e) => {
+    showToast(e.detail.value);
+});
+document.body.addEventListener('bulk-update-success', function (evt) {
+    // Hide the bulk bar
+    const bar = document.getElementById('bulk-bar');
+    const counter = document.getElementById('selected-count');
+    if (bar) bar.style.display = 'none';
+    if (counter) counter.textContent = '0 selected';
 
-//function attachCheckboxListeners() {
-//    document.querySelectorAll('.row-checkbox').forEach(cb => {
-//        cb.removeEventListener('change', updateBulkBar);
-//        cb.addEventListener('change', updateBulkBar);
-//    });
-//}
+    // Optionally uncheck all checkboxes
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
 
-//// After any HTMX request completing — handle success/error toasts
-//document.body.addEventListener('htmx:afterRequest', function (evt) {
-//    const method = evt.detail.requestConfig?.verb?.toUpperCase();
-//    const status = evt.detail.xhr?.status;
+    // Reset master checkbox
+    const masterCb = document.getElementById('select-all');
+    if (masterCb) {
+        masterCb.checked = false;
+        masterCb.indeterminate = false;
+    }
+    showToast("Updated Successfully", 2000);
+});
+document.querySelectorAll('#tab-nav .tab').forEach(tab => {
+    tab.addEventListener('click', function () {
+        // Remove 'active' from all tabs
+        document.querySelectorAll('#tab-nav .tab').forEach(t => t.classList.remove('active'));
+        // Add 'active' to the clicked tab
+        this.classList.add('active');
+    });
+});
 
-//    if (!evt.detail.successful) {
-//        const errText = evt.detail.xhr?.responseText;
-//        if (status === 409) {
-//            showToast('Concurrency conflict — another user modified this record. Please reload.', 'error');
-//        } else if (status >= 500) {
-//            showToast('Server error. Please try again.', 'error');
-//        } else if (status === 404) {
-//            showToast('Item not found.', 'error');
-//        }
-//        return;
-//    }
+function updateActiveTab() {
+    const tabs = document.querySelectorAll('#tab-nav .tab');
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentTab = urlParams.get('tab') || 'all';
 
-//    if (method === 'DELETE') {
-//        showToast('Product deleted successfully.', 'success');
-//    } else if (method === 'POST' && evt.detail.pathInfo?.requestPath?.includes('BulkUpdate')) {
-//        showToast('Bulk status update complete.', 'success');
-//    } else if (method === 'POST' && evt.detail.pathInfo?.requestPath?.includes('Create')) {
-//        showToast('Product created.', 'success');
-//    } else if (method === 'PUT' && evt.detail.pathInfo?.requestPath?.includes('Edit')) {
-//        showToast('Product updated.', 'success');
-//    }
-//});
+    tabs.forEach(tab => {
+        //Remove old active class
+        tab.classList.remove('active');
 
-//// ── ANTIFORGERY FOR DELETE BUTTONS ─────────────────────
-//// HTMX doesn't send AntiForgery by default for non-POST.
-//// We'll inject it from meta tag or hidden input.
-//document.body.addEventListener('htmx:configRequest', function (evt) {
-//    const method = evt.detail.verb?.toUpperCase();
-//    if (method === 'DELETE' || method === 'PUT') {
-//        const token = document.querySelector('input[name="__RequestVerificationToken"]');
-//        if (token) {
-//            evt.detail.headers['RequestVerificationToken'] = token.value;
-//        }
-//    }
-//});
+        //Add active if tab matches currentTab
+        const tabName = tab.getAttribute('hx-vals')
+            ? JSON.parse(tab.getAttribute('hx-vals')).tab
+            : tab.dataset.tab;
 
-//// ── INIT ──────────────────────────────────────────────
+        if (tabName === currentTab) {
+            tab.classList.add('active');
+        }
+    });
+}
 
-//document.addEventListener('DOMContentLoaded', function () {
-//    attachCheckboxListeners();
+// Run on page load
+document.addEventListener('DOMContentLoaded', updateActiveTab);
 
-//    // Inject a hidden antiforgery input into the page if none exists (for HTMX usage)
-//    if (!document.querySelector('input[name="__RequestVerificationToken"]')) {
-//        const form = document.createElement('form');
-//        form.style.display = 'none';
-//        document.body.appendChild(form);
-//    }
-//});
+// Run on HTMX navigation (forward/back)
+document.body.addEventListener('htmx:afterSwap', updateActiveTab);
+document.body.addEventListener('htmx:popstate', updateActiveTab);
+let currentPage = 1;
+function getNextPage() {
+    currentPage++; // Increment the local state
+    return currentPage;
+}
 
-// Expose for inline handlers
-//window.openModal = openModal;
-//window.closeModal = closeModal;
+// Reset page to 1 whenever search or tab changes
+document.body.addEventListener('htmx:beforeRequest', function (evt) {
+    const triggerElt = evt.detail.elt;
+    // Just reset the variable; the configRequest will handle the rest
+    if (triggerElt.id === 'search-box' || triggerElt.classList.contains('tab')) {
+        currentPage = 1;
+    }
+});
+
+document.body.addEventListener("htmx:configRequest", function (e) {
+
+    const token = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content");
+    if (token) {
+        e.detail.headers['RequestVerificationToken'] = token;
+    }
+
+    const searchVal = document.getElementById('search-box').value;
+    const activeTab = document.querySelector(".tab.active").getAttribute("data-tab-value");
+
+    e.detail.parameters['search'] = searchVal;
+    e.detail.parameters['tab'] = activeTab;
+
+    // FIX START: Call the increment function here
+    if (e.detail.elt.getAttribute('hx-trigger') === 'revealed') {
+        e.detail.parameters['page'] = getNextPage(); // Use the function to increment!
+    }
+    else if (e.detail.elt.getAttribute('hx-post') === "/Product/BulkUpdate") {
+        e.detail.parameters['page'] = currentPage;
+    }
+    else {
+        currentPage = 1; // Sync local variable
+        e.detail.parameters['page'] = 1;
+    }
+    // FIX END
+
+    console.log("Request sent:", e.detail.parameters); // Check your console!
+});
+
+
 window.toggleSelectAll = toggleSelectAll;
 window.updateBulkBar = updateBulkBar;
 window.clearSelection = clearSelection;
-//window.addAntiForgeryToDelete = addAntiForgeryToDelete;
+

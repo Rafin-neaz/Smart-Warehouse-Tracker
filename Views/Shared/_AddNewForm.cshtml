@@ -3,24 +3,30 @@
     var categories = ViewBag.Categories as IEnumerable<Category> ?? Enumerable.Empty<Category>();
     var subCategories = ViewBag.SubCategories as IEnumerable<SubCategory> ?? Enumerable.Empty<SubCategory>();
 }
-<form hx-post="/Product/Create" hx-target="#add-new-form" hx-sync="this:queue"  class="border p-3 rounded">
+<form hx-post="/Product/Create" hx-target="#add-new-form" hx-sync="this:queue"  class="border p-3 rounded"
+      hx-include="#inventory-value">
     <h5 class="mb-3">Add New Product</h5>
 
     <div class="row g-3">
         <div class="col-md-4">
-            <input asp-for="Name" class="form-control" placeholder="Name" />
+            <input asp-for="Name" class="form-input" placeholder="Name" />
             <span asp-validation-for="Name" class="text-danger"></span>
         </div>
 
         <div class="col-md-4">
-            <input asp-for="Description" class="form-control" placeholder="Description" />
+            <input asp-for="Description" class="form-input" placeholder="Description" />
             <span asp-validation-for="Description" class="text-danger"></span>
         </div>
 
         <div class="col-md-2">
-            <input asp-for="Price" type="text" class="form-control" placeholder="Price" />
+            <input asp-for="Price" type="text" class="form-input" placeholder="Price" />
             <span asp-validation-for="Price" class="text-danger"></span>
         </div>
+        <div class="col-md-2">
+            <input asp-for="StockQuantity" type="number" class="form-input" placeholder="Stock Qty" />
+            <span asp-validation-for="StockQuantity" class="text-danger"></span>
+        </div>
+
 
         <!-- Cascading Category → Sub-Category -->
         <div class="form-group">

@@ -1,6 +1,26 @@
 ﻿@model List<Product>
+@{
+    bool hasMore = ViewData["HasMore"] as bool? ?? false;
+}
 
-@foreach (var item in Model)
+@for (int i = 0; i < Model.Count; i++)
 {
-    @await Html.PartialAsync("_ProductRow", item)
+    var p = Model[i];
+    bool isLast = (i == Model.Count - 1);
+
+    if (isLast && hasMore)
+    {
+        <tr hx-get="/Product/Index"
+            hx-trigger="revealed"
+            hx-swap="afterend"
+            class="product-row">
+            @await Html.PartialAsync("_ProductRowContent", p)
+        </tr>
+    }
+    else
+    {
+        <tr class="product-row">
+            @await Html.PartialAsync("_ProductRowContent", p)
+        </tr>
+    }
 }

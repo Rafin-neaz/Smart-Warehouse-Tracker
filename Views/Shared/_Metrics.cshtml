@@ -61,27 +61,6 @@
     </div>
 }
 
-@* @if (Model.ActiveShipmentItems.Any())
-{
-    <div class="alert-section">
-        <h3><i class="fas fa-satellite"></i> Active Shipments</h3>
-        <ul class="alert-list">
-            @foreach (var item in Model.ActiveShipmentItems)
-            {
-                <li class="alert-item alert-blue">
-                    <div class="alert-name">@item.Name</div>
-                    <div class="alert-detail">
-                        @if (!string.IsNullOrEmpty(item.Origin))
-                        {
-                            <small>@item.Origin → @item.Destination</small>
-                        }
-                    </div>
-                </li>
-            }
-        </ul>
-    </div>
-} *@
-
 <div class="metrics-footer">
     <small><i class="fas fa-rotate"></i> Auto-refreshes every 30s</small>
 </div>
