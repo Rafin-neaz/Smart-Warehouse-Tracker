@@ -14,7 +14,9 @@ namespace WarehouseTracker.Models
         public string Description { get; set; }
         [Required(ErrorMessage = "Unit price is required.")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Unit price must be greater than zero.")]
-        public decimal? Price { get; set; } = 0;
+        [Display(Name = "Per Unit Price")]
+        [DisplayFormat(DataFormatString = "{0:0.00}", ApplyFormatInEditMode = true)]
+        public decimal? Price { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         [Required(ErrorMessage = "Proudct category is required")]
